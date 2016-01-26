@@ -6747,10 +6747,11 @@ function AngryFood() {
 
 	this.status = 'angry';
 	this.sprite = [0x90,0x91,0x92,0x93,0x94];
-	this.isEdible = false;
+	this.hp = 2;
 
 	this.speedX = 1;
 	this.speedY = 1;
+
 	this.timeLimit = Date.now() + LIFETIME;
 }
 inherits(AngryFood, Food);
@@ -6787,6 +6788,15 @@ AngryFood.prototype.isAlive = function() {
 	return (Date.now() < this.timeLimit);
 };
 
+AngryFood.prototype.changeState = function(state) {
+	Food.prototype.changeState.call(this, state);
+
+	if (state === "superAngry"){
+		this.sprite = [0xa0,0xa1,0xa2,0xa3,0xa4];
+		this.timeLimit = Date.now() + LIFETIME;
+	}
+}
+
 },{"./Food":39}],39:[function(require,module,exports){
 var WALL = 128;
 
@@ -6798,6 +6808,7 @@ function Food(){
 	this.x = -8;
 	this.y = random(120);
 	this.isEdible = true;
+	this.hp = 1;
 	
 	this.sprite = [0x80,0x81,0x82,0x83,0x84];
 	this.frame = 0;
@@ -6813,32 +6824,26 @@ Food.prototype.draw = function(){
 	sprite(this.sprite[Math.floor(this.frame)], this.x, this.y);
 };
 
-/*Food.prototype.changeStatus = function(status){
-	this.status = status;
-
-	if (this.status === "angry"){
-		this.sprite = [0x90,0x91,0x92,0x93,0x94];
-		this.isEdible = false;
-	} else {
-		this.sprite = [0x80,0x81,0x82,0x83,0x84];
-	}
-};*/
-
 Food.prototype.destroy = function(foods){
-	var index = foods.indexOf(this);
+	this.hp -= 1;
 
-	if (index === -1) return console.warn('food does not exist in foods array');
-	foods.splice(index,1);
+	if (this.hp <= 0) {
+		var index = foods.indexOf(this);
+		if (index === -1) return console.warn('food does not exist in foods array');
+		foods.splice(index,1);
+	}
 };
 
 Food.prototype.toss = function(paddle){
 
 	if (btnp.left &&
-		this.isEdible &&
+		paddle.canEat(this) &&
 		this.x >= paddle.x - paddle.width &&
 		this.y >= paddle.y &&
-		this.y <= paddle.y + paddle.height){
-		return 'eaten';
+		this.y <= paddle.y + paddle.height) {
+				paddle.eat(this);
+				return 'eaten';
+		
 	} else if (this.isAlive()) {
 		this.move();
 		return false;
@@ -6855,10 +6860,17 @@ Food.prototype.move = function() {
 Food.prototype.isAlive = function() {
 	return this.x < WALL;
 };
+
+Food.prototype.changeState = function(state){
+	this.status = state;
+}
+
 },{}],40:[function(require,module,exports){
 var FLOOR = 110;
 var CEILING = 0;
 var SPEED = 5;
+var COLOR_DEFAULT = 1;
+var COLOR_UPDATE = 15;
 
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
@@ -6868,20 +6880,19 @@ function Paddle(){
 	this.status = "";
 	this.y = 50;
 	this.x = 115;
-	this.color = 2;
+	this.color = COLOR_DEFAULT;
 	this.width = 8;
 	this.height = 16;
 	this.timeStamp = 0;
+
+	this.greenCounter = 0;
+	this.redCounter = 0;
 }
 module.exports = Paddle;
 
-Paddle.prototype.draw = function(state){
+Paddle.prototype.draw = function(){
 	paper(this.color);
 	rectfill(this.x, this.y, this.width, this.height);
-
-	if (state === "red"){
-		this.color = 15;
-	}
 };
 
 Paddle.prototype.move = function(){
@@ -6892,19 +6903,7 @@ Paddle.prototype.move = function(){
 	}
 };
 
-Paddle.prototype.changeColor = function(status){
-	this.status = status;
-
-	if (this.status === "red"){
-		TINA.Tween(this, ['color'])
-		.to({color: 15},10)
-		.start();
-
-	} else this.color = 2;
-
-};
-
-Paddle.prototype.eat = function(){
+Paddle.prototype.bite = function(){
 	var now = Date.now();
 	if (this.timeStamp + 300 > now) return;
 	this.timeStamp = now;
@@ -6916,7 +6915,39 @@ Paddle.prototype.eat = function(){
 		.to({x: moveX}, 10)
 		.to({x: x}, 10)
 		.start();
-}
+
+};
+
+Paddle.prototype.canEat = function (food) {
+
+	if (food.status === "angry") {
+		return (this.greenCounter >= 2);
+	} else if (food.status === "superAngry") {
+		return true;
+	} else {
+		// normal food
+		return true;
+	}
+};
+
+Paddle.prototype.changeState = function (){
+	if (this.greenCounter >= 2) {
+		this.color = COLOR_UPDATE;
+	} else {
+		this.color = COLOR_DEFAULT;
+	}
+};
+
+Paddle.prototype.eat = function(food) {
+	if (food.status === "angry") {
+		this.redCounter += 1;
+		this.greenCounter -= 2;
+		food.changeState("superAngry");
+	} else {
+		this.greenCounter += 1;
+	}
+	this.changeState();
+};
 
 },{}],41:[function(require,module,exports){
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
@@ -6929,19 +6960,18 @@ function Score(){
 }
 module.exports = Score;
 
-
 Score.prototype.draw = function(){
 	pen(15);
-	locate(2,19);
-	println("Red: " + this.redScore);
-	locate(2,20);
-	println("Green " + this.greenScore);
-	locate(2,21);
+	sprite(0xa0, 2, 109);
+	print(this.redScore, 12, 110);
+	sprite(0x80, 2, 120);
+	print(this.greenScore, 12, 121);
+	locate(13,21);
 	print("Total: " + this.totalScore);
 };
 
 Score.prototype.updateScore = function (food) {
-	if(food.status === "angry"){
+	if(food.status === "superAngry"){
 		this.redScore += 1;
 	} else {
 		this.greenScore += 1;
@@ -6969,7 +6999,6 @@ function generateFood(){
 
 	if (random(3) === 0){
 		food = new AngryFood();
-		// food.changeStatus("angry");
 	} else {
 		food = new Food();
 	}
@@ -6985,16 +7014,9 @@ function updateFood(){
 		if (foodState === 'eaten') {
 			score.updateScore(food);
 			food.destroy(foods);
-			food.isEdible = !food.isEdible;
 		} else if (foodState === 'lost') {
 			food.destroy(foods);
-		} 
-
-		
-
-		// else if (score.greenScore >= 2 & !food.isEdible){
-		// 	food.isEdible = true;
-		// }
+		}
 	}
 }
 
@@ -7008,9 +7030,7 @@ exports.update = function () {
 	paper(14);
 	cls();
 	score.draw();
-	if(score.greenScore >= 2){
-		paddle.draw("red");
-	}
+
 	paddle.draw();
 	
 	paddle.move();
@@ -7022,7 +7042,7 @@ exports.update = function () {
 		foodSpawnCounter = 0;
 	}
 
-	if (btnp.left) paddle.eat();
+	if (btnp.left) paddle.bite();
 
 	updateFood();
 

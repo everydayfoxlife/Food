@@ -17,7 +17,6 @@ function generateFood(){
 
 	if (random(3) === 0){
 		food = new AngryFood();
-		// food.changeStatus("angry");
 	} else {
 		food = new Food();
 	}
@@ -33,14 +32,9 @@ function updateFood(){
 		if (foodState === 'eaten') {
 			score.updateScore(food);
 			food.destroy(foods);
-			paddle.eat(food);
 		} else if (foodState === 'lost') {
 			food.destroy(foods);
-		} 
-
-		// else if (score.greenScore >= 2 & !food.isEdible){
-		// 	food.isEdible = true;
-		// }
+		}
 	}
 }
 

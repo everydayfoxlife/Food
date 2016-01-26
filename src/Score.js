@@ -8,19 +8,18 @@ function Score(){
 }
 module.exports = Score;
 
-
 Score.prototype.draw = function(){
 	pen(15);
-	locate(2,19);
-	println("Red: " + this.redScore);
-	locate(2,20);
-	println("Green " + this.greenScore);
-	locate(2,21);
+	sprite(0xa0, 2, 109);
+	print(this.redScore, 12, 110);
+	sprite(0x80, 2, 120);
+	print(this.greenScore, 12, 121);
+	locate(13,21);
 	print("Total: " + this.totalScore);
 };
 
 Score.prototype.updateScore = function (food) {
-	if(food.status === "angry"){
+	if(food.status === "superAngry"){
 		this.redScore += 1;
 	} else {
 		this.greenScore += 1;

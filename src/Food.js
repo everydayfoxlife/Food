@@ -8,6 +8,7 @@ function Food(){
 	this.x = -8;
 	this.y = random(120);
 	this.isEdible = true;
+	this.hp = 1;
 	
 	this.sprite = [0x80,0x81,0x82,0x83,0x84];
 	this.frame = 0;
@@ -23,32 +24,26 @@ Food.prototype.draw = function(){
 	sprite(this.sprite[Math.floor(this.frame)], this.x, this.y);
 };
 
-/*Food.prototype.changeStatus = function(status){
-	this.status = status;
-
-	if (this.status === "angry"){
-		this.sprite = [0x90,0x91,0x92,0x93,0x94];
-		this.isEdible = false;
-	} else {
-		this.sprite = [0x80,0x81,0x82,0x83,0x84];
-	}
-};*/
-
 Food.prototype.destroy = function(foods){
-	var index = foods.indexOf(this);
+	this.hp -= 1;
 
-	if (index === -1) return console.warn('food does not exist in foods array');
-	foods.splice(index,1);
+	if (this.hp <= 0) {
+		var index = foods.indexOf(this);
+		if (index === -1) return console.warn('food does not exist in foods array');
+		foods.splice(index,1);
+	}
 };
 
 Food.prototype.toss = function(paddle){
 
 	if (btnp.left &&
-		this.isEdible &&
+		paddle.canEat(this) &&
 		this.x >= paddle.x - paddle.width &&
 		this.y >= paddle.y &&
-		this.y <= paddle.y + paddle.height){
-		return 'eaten';
+		this.y <= paddle.y + paddle.height) {
+				paddle.eat(this);
+				return 'eaten';
+		
 	} else if (this.isAlive()) {
 		this.move();
 		return false;
@@ -65,3 +60,7 @@ Food.prototype.move = function() {
 Food.prototype.isAlive = function() {
 	return this.x < WALL;
 };
+
+Food.prototype.changeState = function(state){
+	this.status = state;
+}

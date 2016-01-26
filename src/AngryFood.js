@@ -7,10 +7,11 @@ function AngryFood() {
 
 	this.status = 'angry';
 	this.sprite = [0x90,0x91,0x92,0x93,0x94];
-	this.isEdible = false;
+	this.hp = 2;
 
 	this.speedX = 1;
 	this.speedY = 1;
+
 	this.timeLimit = Date.now() + LIFETIME;
 }
 inherits(AngryFood, Food);
@@ -46,3 +47,12 @@ AngryFood.prototype.move = function() {
 AngryFood.prototype.isAlive = function() {
 	return (Date.now() < this.timeLimit);
 };
+
+AngryFood.prototype.changeState = function(state) {
+	Food.prototype.changeState.call(this, state);
+
+	if (state === "superAngry"){
+		this.sprite = [0xa0,0xa1,0xa2,0xa3,0xa4];
+		this.timeLimit = Date.now() + LIFETIME;
+	}
+}
